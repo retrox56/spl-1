@@ -1,0 +1,5 @@
+@"
+build/
+*.exe
+*.o
+"@ | Out-File -Encoding ascii .gitignore
