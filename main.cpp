@@ -26,6 +26,7 @@ int main(int argc, char* argv[]) {
     int maxPages = argc > 2 ? atoi(argv[2]) : 30;
     int maxDepth = argc > 3 ? atoi(argv[3]) : 2;
     int delayMs = argc > 4 ? atoi(argv[4]) : 200;
+    string caBundlePath = argc > 5 ? argv[5] : "";
 
     if (maxPages < 1 || maxDepth < 0 || delayMs < 0) {
         cout << "maxPages must be at least 1, maxDepth and delayMs cannot be negative\n";
@@ -34,6 +35,10 @@ int main(int argc, char* argv[]) {
 
     Crawler crawler(maxPages, maxDepth);
     crawler.setDelayMs(delayMs);
+
+    if (!caBundlePath.empty()) {
+    crawler.setCaBundlePath(caBundlePath);
+    }
 
     cout << "Crawling " << startUrl << "  (max " << maxPages << " pages, depth "
          << maxDepth << ", " << delayMs << " ms delay)\n\n";

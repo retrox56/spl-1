@@ -26,6 +26,7 @@ public:
     Crawler(int maxPages, int maxDepth);
 
     void setDelayMs(int ms) { delayMs_ = ms; }
+    void setCaBundlePath(const std::string& path) { client_.setCaBundlePath(path); }
     void run(const std::string& startUrl);
 
     const std::vector<PageInfo>& pages() const { return pages_; }
