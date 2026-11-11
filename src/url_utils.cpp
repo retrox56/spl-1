@@ -40,7 +40,7 @@ std::string getScheme(const std::string& link) {
     return "";
 }
 
-// Split "path?query" into its two parts.
+
 void splitPathQuery(const std::string& s, std::string& path, std::string& query) {
     size_t q = s.find('?');
     if (q == std::string::npos) {
@@ -52,7 +52,7 @@ void splitPathQuery(const std::string& s, std::string& path, std::string& query)
     }
 }
 
-} // namespace
+} 
 
 ParsedUrl parseUrl(const std::string& rawUrl) {
     ParsedUrl result;
@@ -112,7 +112,7 @@ std::string removeDotSegments(const std::string& rawPath) {
     std::string path = rawPath;
     if (path.empty() || path[0] != '/') path = "/" + path;
 
-    // Split on '/'. "/a/b" becomes ["", "a", "b"]; we skip the first empty piece.
+    // Split on '/'. "/a/b" 
     std::vector<std::string> parts;
     size_t start = 0;
     while (true) {

@@ -103,7 +103,7 @@ HttpResponse HttpClient::get(const std::string& url) {
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, timeoutSec_);
     curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, followRedirects_ ? 1L : 0L);
-    curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");  // allow gzip etc. and auto-decode
+    curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");  
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ctx);
