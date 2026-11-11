@@ -1,99 +1,97 @@
 # Web Crawler & Website Structure Analyzer
 
-C++17 project (SPL1). Given a website URL, it crawls pages with BFS, extracts and normalizes links, avoids duplicates, and will build a link graph and structure report.
+SPL1 project, written in C++17. Given a website URL, it fetches pages, extracts and normalizes links, detects duplicates, and will crawl the site with BFS and report its structure.
 
-## Modules
-| Module | Files | Purpose |
+## Current status
+| Module | Files | Status |
 |---|---|---|
-| HttpClient | `include/http_client.h`, `src/http_client.cpp` | HTTP/HTTPS GET via libcurl. Redirects are reported, not hidden. |
-| url_utils | `include/url_utils.h`, `src/url_utils.cpp` | Parse, resolve relative links, normalize, same-host check. |
-| link_extractor | `include/link_extractor.h`, `src/link_extractor.cpp` | Finds `<a href>` links in HTML. |
-| crawler, graph, report | planned | BFS crawl, link graph, structure report. |
+| HttpClient | `include/http_client.h`, `src/http_client.cpp` | Done |
+| URL utilities | `include/url_utils.h`, `src/url_utils.cpp` | Done |
+| Link extractor | `include/link_extractor.h`, `src/link_extractor.cpp` | Done |
+| BFS crawler | planned | |
+| Link graph and statistics | planned | |
+| Report generation | planned | |
+
+- **HttpClient** does HTTP/HTTPS GET with libcurl. Redirects are not followed automatically, so the crawler can record redirect chains.
+- **URL utilities** parse URLs, resolve relative links, normalize them (lowercase host, default ports, dot segments, fragments), and compare hosts.
+- **Link extractor** reads `<a href>` links from HTML and skips comments, scripts and styles.
 
 ## Folder layout
 ```
-include/   header files (.h)
-src/       implementation files (.cpp)
-tests/     small test programs
-build/     compiled .exe files (created by you, not committed)
+include/   header files
+src/       implementation files
+tests/     test programs and sample_page.html
+build/     compiled programs (not committed)
 output/    generated reports
+docs/      notes
 ```
 
-## Environment setup (Windows 10/11)
+## Environment setup (Windows)
 
 ### 1. Install MSYS2
-Download the installer from https://www.msys2.org and install to the default folder `C:\msys64`.
+Download from https://www.msys2.org and install to `C:\msys64`.
 
-### 2. Update MSYS2 (important)
-Open **MSYS2 UCRT64** from the Start menu. It must be UCRT64, not MSYS or MINGW64. Run:
+### 2. Update it
+Open **MSYS2 UCRT64** from the Start menu (not MSYS or MINGW64):
 ```bash
 pacman -Syu
 ```
-Press `Y`. If it asks you to close the window, close it, reopen **MSYS2 UCRT64**, and run `pacman -Syu` again. Repeat until it says there is nothing to do.
+If it asks you to close the window, reopen **MSYS2 UCRT64** and run it again until there is nothing left to update. An out-of-date package database gives `404` errors during installs.
 
-Do this before installing anything. An out-of-date package database causes many `404` errors, because the mirrors have already replaced the old package files.
-
-### 3. Install the compiler and libcurl
-In the same MSYS2 UCRT64 terminal:
+### 3. Install compiler and libcurl
 ```bash
 pacman -S --needed mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-curl
-```
-Check that it installed:
-```bash
 pacman -Qs curl
 ```
 
-### 4. Put the compiler on the Windows PATH
-`pacman` only works inside the MSYS2 terminal. The compiler needs to be reachable from PowerShell and VS Code.
-
-1. Press the Windows key and search for **Edit environment variables for your account**.
-2. Select `Path`, click **Edit**, then **New**, and add `C:\msys64\ucrt64\bin`.
-3. Click OK and **open a new PowerShell window**.
-
-No admin rights? Use this for the current PowerShell window only:
+### 4. Add the compiler to PATH
+`pacman` only works inside the MSYS2 terminal, but the compiler has to work in PowerShell. Add `C:\msys64\ucrt64\bin` to your user PATH (search Windows for "Edit environment variables for your account"), then open a new PowerShell window. For one window only:
 ```powershell
 $env:PATH = "C:\msys64\ucrt64\bin;" + $env:PATH
 ```
 
-### 5. Verify (PowerShell)
+### 5. Check
 ```powershell
 g++ --version
 where.exe g++
 Get-ChildItem C:\msys64\ucrt64\include\curl\curl.h
-Get-ChildItem C:\msys64\ucrt64\lib\libcurl*
 Get-ChildItem C:\msys64\ucrt64\bin\libcurl*.dll
 ```
-`where.exe g++` should show `C:\msys64\ucrt64\bin\g++.exe`.
-
-### Why `pacman` fails in PowerShell
-`pacman` lives in `C:\msys64\usr\bin`, which is deliberately not on the Windows PATH. Only the MSYS2 terminals set it up. The `curl.exe` that ships with Windows is a command-line tool only. It has no headers or link libraries, so you can't compile against it.
 
 ## Build and run
 From the project folder:
 ```powershell
 mkdir build
-g++ -std=c++17 -Wall -Wextra -Iinclude src\http_client.cpp tests\test_http.cpp -o build\test_http.exe -lcurl
 g++ -std=c++17 -Wall -Wextra -Iinclude src\url_utils.cpp tests\test_url.cpp -o build\test_url.exe
 g++ -std=c++17 -Wall -Wextra -Iinclude src\link_extractor.cpp tests\test_links.cpp -o build\test_links.exe
+g++ -std=c++17 -Wall -Wextra -Iinclude src\http_client.cpp tests\test_http.cpp -o build\test_http.exe -lcurl
+g++ -std=c++17 -Wall -Wextra -Iinclude src\http_client.cpp src\url_utils.cpp src\link_extractor.cpp tests\demo_extract.cpp -o build\demo_extract.exe -lcurl
 ```
-Run:
+
+Tests:
 ```powershell
-.\build\test_http.exe https://example.com
 .\build\test_url.exe
 .\build\test_links.exe
+.\build\test_http.exe http://github.com
+```
+
+Demo, on a local HTML file or a live site:
+```powershell
+.\build\demo_extract.exe file tests\sample_page.html http://example.com/blog/index.html
+.\build\demo_extract.exe url https://books.toscrape.com
 ```
 
 ## Troubleshooting
 | Problem | Fix |
 |---|---|
 | `pacman` not recognized | Use the MSYS2 UCRT64 terminal, not PowerShell. |
-| `404` errors during install | Run `pacman -Syu` until nothing is left to update, then install again. |
-| `curl/curl.h: No such file` | libcurl isn't installed, or the wrong g++ is first on PATH. Check `where.exe g++`. |
-| Program exits with no output | A DLL is missing. Make sure `C:\msys64\ucrt64\bin` is on PATH. |
+| `404` errors during install | Run `pacman -Syu` until nothing is left, then install again. |
+| `curl/curl.h: No such file` | libcurl is not installed, or another g++ is first on PATH. Check `where.exe g++`. |
+| Program exits with no output | A DLL is missing. Check that `C:\msys64\ucrt64\bin` is on PATH. |
 | HTTPS certificate error | Pass a CA bundle to `test_http` as the second argument. |
 
-## Fallback if the lab PC can't install MSYS2
-Compile at home, then copy `build\*.exe` plus the DLLs they need into one folder on a USB drive. In the MSYS2 UCRT64 terminal, `ldd build/test_http.exe` lists the DLLs. Copy those from `C:\msys64\ucrt64\bin`. This is a backup plan and I haven't run it on your machine.
-
-## Status
-HttpClient, url_utils, and link_extractor are implemented. The crawler engine, graph, and report are in progress.
+## Known limitations
+- Subdomains count as different hosts (`docs.site.com` vs `site.com`).
+- `/` and `/index.html` are treated as different URLs, and so are `/about` and `/about/`.
+- Tracking parameters such as `utm_source` are kept in URLs.
+- IPv6 hosts are not supported.
