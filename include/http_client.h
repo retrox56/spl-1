@@ -3,9 +3,9 @@
 
 #include <string>
 
-// Everything the crawler needs to know about one HTTP request.
+// Everything the crawler needs to know about one HTTP request
 struct HttpResponse {
-    bool success = false;        // true if a response was received (any status code)
+    bool success = false;        // true if any status code was received
     long statusCode = 0;         // 200, 301, 404, ... (0 if no response)
     std::string url;             // URL that was requested
     std::string body;            // response body
@@ -20,7 +20,7 @@ public:
     HttpClient();
     ~HttpClient();
 
-    // Copying would double-free the curl handle, so forbid it.
+    // Copying would double-free the curl handle
     HttpClient(const HttpClient&) = delete;
     HttpClient& operator=(const HttpClient&) = delete;
 
