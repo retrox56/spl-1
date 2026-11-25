@@ -95,3 +95,48 @@ Demo, on a local HTML file or a live site:
 - `/` and `/index.html` are treated as different URLs, and so are `/about` and `/about/`.
 - Tracking parameters such as `utm_source` are kept in URLs.
 - IPv6 hosts are not supported.
+## Offline crawl-ordering research lab
+
+The simulator compares three crawl-ordering strategies on a deterministic synthetic website graph. It does not access the internet.
+
+- **BFS baseline:** crawls discovered pages in first-in, first-out order.
+- **Focused crawling:** uses the simulated topic-relevance estimate to prioritize promising pages with a priority queue.
+- **OPIC-style scheduling:** distributes each crawled page's accumulated cash evenly to its outgoing links, then prioritizes the frontier page with the highest cash.
+
+The dataset contains ground-truth relevance scores solely for evaluating the strategies. The focused strategy uses those scores as its relevance estimate; OPIC does not use them for scheduling. This is an educational, simplified OPIC-style simulation, not a claim of full production OPIC protocol compliance.
+
+Build everything from PowerShell with `Set-ExecutionPolicy -Scope Process Bypass` followed by ` .\build.ps1 `. Then run:
+
+```powershell
+.\build\crawl_ordering_lab.exe
+.\build\crawl_ordering_lab.exe 5
+.\build\crawl_ordering_lab.exe 12
+```
+
+The optional number is the crawl budget. The program prints each visit order, the number of important pages found, total and average relevance, and a comparison table.
+
+## Live website graph and PageRank
+
+After the normal crawler finishes, it builds a directed adjacency-list graph from the pages actually crawled. Edges are included only when the destination page was also crawled. The main crawler prints the adjacency list, in-degree/out-degree, pages with zero incoming links, DFS traversal, and PageRank scores (damping factor 0.85). PageRank uses iterative updates, redistributes dangling-node rank evenly, and stops when the L1 difference is below its tolerance or the iteration limit is reached.
+
+Run the crawler as usual; graph analysis is now part of its output:
+
+```powershell
+.\build\crawler.exe https://books.toscrape.com 15 2 300 "G:\\spl-demo\\cacert.pem"
+```
+
+Run the graph/PageRank unit test with:
+
+```powershell
+.\build\test_graph.exe
+```
+
+## Offline crawl-ordering lab
+
+The separate `crawl_ordering_lab.exe` compares BFS, relevance-focused priority scheduling, and a simplified OPIC-style cash-distribution strategy on a fixed synthetic graph. It is deliberately offline and prints the visit sequence and measured relevance for a chosen crawl budget. This is a simplified research/teaching simulator, not a full production OPIC implementation. Its relevance labels are evaluation ground truth; focused crawling is given those scores as its estimated relevance, while OPIC uses link-flow cash only.
+
+```powershell
+.\build\crawl_ordering_lab.exe
+.\build\crawl_ordering_lab.exe 5
+.\build\crawl_ordering_lab.exe 12
+```

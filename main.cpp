@@ -1,5 +1,7 @@
 #include "crawler.h"
 #include "url_utils.h"
+#include "website_graph.h"
+#include "pagerank.h"
 
 #include <algorithm>
 #include <chrono>
@@ -106,6 +108,52 @@ int main(int argc, char* argv[]) {
             for (const string& hop : p.redirects) cout << " -> " << hop;
             cout << "  (" << p.statusCode << ")\n";
         }
+    }
+
+    // Build a directed adjacency-list graph from the pages actually crawled.
+    WebsiteGraph graph(pages);
+    cout << "\n===== Website Graph Analysis =====\n";
+    cout << "vertices (crawled pages): " << graph.size() << "\n";
+    cout << "edges (links between crawled pages): " << graph.edgeCount() << "\n";
+    cout << "\nAdjacency list\n";
+    for (size_t i = 0; i < graph.size(); ++i) {
+        cout << "  [" << i << "] " << graph.urls()[i] << " -> ";
+        const auto& edges = graph.adjacency()[i];
+        if (edges.empty()) cout << "(none)";
+        for (size_t j = 0; j < edges.size(); ++j) {
+            if (j) cout << ", ";
+            cout << graph.urls()[edges[j]];
+        }
+        cout << "\n";
+    }
+
+    cout << "\nPage link degrees\n";
+    for (size_t i = 0; i < graph.size(); ++i)
+        cout << "  in=" << graph.inDegree(static_cast<int>(i))
+             << " out=" << graph.outDegree(static_cast<int>(i))
+             << "  " << graph.urls()[i] << "\n";
+
+    vector<int> orphans = graph.orphanPages();
+    cout << "\nOrphan pages (zero incoming links): " << orphans.size() << "\n";
+    for (int id : orphans) cout << "  " << graph.urls()[id] << "\n";
+
+    vector<int> dfsOrder = graph.dfs();
+    cout << "\nDFS from starting page: ";
+    for (size_t i = 0; i < dfsOrder.size(); ++i) {
+        if (i) cout << " -> ";
+        cout << graph.urls()[dfsOrder[i]];
+    }
+    cout << "\n";
+
+    vector<double> ranks = calculatePageRank(graph);
+    vector<int> rankOrder(graph.size());
+    for (size_t i = 0; i < rankOrder.size(); ++i) rankOrder[i] = static_cast<int>(i);
+    sort(rankOrder.begin(), rankOrder.end(), [&](int a, int b) { return ranks[a] > ranks[b]; });
+    cout << "\nPageRank ranking (damping=0.85)\n";
+    for (size_t i = 0; i < rankOrder.size(); ++i) {
+        int id = rankOrder[i];
+        cout << "  " << (i + 1) << ". " << fixed << setprecision(6)
+             << ranks[id] << "  " << graph.urls()[id] << "\n";
     }
 
     if (broken > 0) {

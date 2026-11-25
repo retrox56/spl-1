@@ -11,6 +11,7 @@ struct RobotsRule {
 
 class RobotsParser {
 public:
+    // Parse robots.txt text for the supplied crawler product token.
     void parse(const std::string& text, const std::string& userAgent);
     bool isAllowed(const std::string& url) const;
     bool isLoaded() const { return loaded_; }
