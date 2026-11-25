@@ -75,6 +75,8 @@ int main(int argc, char* argv[]) {
     cout << "  broken / failed    : " << broken << "\n";
     cout << "still in queue       : " << crawler.leftInQueue() << "\n";
     cout << "files skipped        : " << crawler.skippedFiles() << "\n";
+    cout << "robots.txt rules     : " << crawler.robotsRuleCount() << "\n";
+    cout << "blocked by robots.txt: " << crawler.blockedByRobots() << "\n";
     cout << "unique links found   : " << allLinks.size() << "\n";
     cout << "  external           : " << externalLinks.size() << "\n";
     cout << "avg response time    : " << fixed << setprecision(3)

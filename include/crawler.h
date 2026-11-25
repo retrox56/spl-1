@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "http_client.h"
+#include "robots_parser.h"
 
 struct PageInfo {
     std::string url;
@@ -32,10 +33,13 @@ public:
     const std::vector<PageInfo>& pages() const { return pages_; }
     int skippedFiles() const { return skippedFiles_; }
     int leftInQueue() const { return leftInQueue_; }
+    int blockedByRobots() const { return blockedByRobots_; }
+    size_t robotsRuleCount() const { return robots_.ruleCount(); }
 
 private:
     PageInfo visit(const std::string& url, int depth, const std::string& parent);
     void printProgress(const PageInfo& page, size_t number) const;
+    bool loadRobots(const std::string& startUrl);
 
     HttpClient client_;
     int maxPages_;
@@ -43,6 +47,8 @@ private:
     int delayMs_;
     int skippedFiles_;
     int leftInQueue_;
+    int blockedByRobots_;
+    RobotsParser robots_;
     std::string startUrl_;
     std::vector<PageInfo> pages_;
     std::unordered_set<std::string> visited_;

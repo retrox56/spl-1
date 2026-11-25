@@ -52,7 +52,7 @@ bool looksLikeFile(const string& url) {
 
 Crawler::Crawler(int maxPages, int maxDepth)
     : maxPages_(maxPages), maxDepth_(maxDepth), delayMs_(200),
-      skippedFiles_(0), leftInQueue_(0) {
+      skippedFiles_(0), leftInQueue_(0), blockedByRobots_(0) {
     client_.setTimeout(10);
 }
 
@@ -61,10 +61,19 @@ void Crawler::run(const string& startUrl) {
     visited_.clear();
     skippedFiles_ = 0;
     leftInQueue_ = 0;
+    blockedByRobots_ = 0;
+    robots_ = RobotsParser();
 
     startUrl_ = normalizeUrl(startUrl);
     if (startUrl_.empty()) {
         cout << "Not a valid http/https URL: " << startUrl << "\n";
+        return;
+    }
+
+    loadRobots(startUrl_);
+    if (!robots_.isAllowed(startUrl_)) {
+        blockedByRobots_++;
+        cout << "Starting URL disallowed by robots.txt: " << startUrl_ << "\n";
         return;
     }
 
@@ -86,6 +95,7 @@ void Crawler::run(const string& startUrl) {
 
         for (const string& link : page.links) {
             if (!isSameHost(link, startUrl_)) continue;
+            if (!robots_.isAllowed(link)) { blockedByRobots_++; continue; }
             if (!visited_.insert(link).second) continue;
             if (looksLikeFile(link)) {
                 skippedFiles_++;
@@ -96,6 +106,43 @@ void Crawler::run(const string& startUrl) {
         }
     }
     leftInQueue_ = (int)todo.size();
+}
+
+
+bool Crawler::loadRobots(const string& startUrl) {
+    ParsedUrl origin = parseUrl(startUrl);
+    if (!origin.valid) return false;
+    origin.path = "/";
+    origin.query.clear();
+    string robotsUrl = buildUrl(origin) + "robots.txt";
+    HttpResponse response = client_.get(robotsUrl);
+
+    // Follow a small number of robots.txt redirects manually.
+    for (int hop = 0; hop < 3 && response.success &&
+         response.statusCode >= 300 && response.statusCode < 400 && !response.location.empty(); ++hop) {
+        string next = resolveUrl(robotsUrl, response.location);
+        if (next.empty()) break;
+        robotsUrl = next;
+        response = client_.get(robotsUrl);
+    }
+
+    if (response.success && response.statusCode >= 200 && response.statusCode < 300) {
+        robots_.parse(response.body, "SPL1-WebCrawler");
+        cout << "robots.txt loaded: " << robots_.ruleCount() << " rules\n";
+        return true;
+    }
+
+    if (response.success && response.statusCode >= 400 && response.statusCode < 500) {
+        // RFC 9309: 4xx means the robots file is unavailable; crawling may proceed.
+        robots_.parse("", "SPL1-WebCrawler");
+        cout << "robots.txt unavailable (HTTP " << response.statusCode << "); proceeding without rules\n";
+        return true;
+    }
+
+    // Network errors and 5xx are treated conservatively: disallow crawling.
+    robots_.parse("User-agent: *\nDisallow: /\n", "SPL1-WebCrawler");
+    cout << "robots.txt could not be retrieved; blocking URLs as a safety measure\n";
+    return false;
 }
 
 PageInfo Crawler::visit(const string& url, int depth, const string& parent) {
